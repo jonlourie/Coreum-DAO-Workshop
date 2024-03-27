@@ -1,6 +1,6 @@
 import { Noto_Sans } from 'next/font/google';
 import { Header } from '../components/Header';
-import Body from '../components/Body';
+import Body from '../components/DaoPanel';
 import Footer from '../components/Footer';
 
 
