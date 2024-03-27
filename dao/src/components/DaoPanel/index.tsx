@@ -27,7 +27,6 @@ function DaoPanel(){
   const [proposalData, setProposalData] = useState({
     title: '',
     description: '',
-    recipient: '',
     amount: ''
   });
   
@@ -217,10 +216,10 @@ const vote = async (proposalId, approve) => {
       autoComplete="off"
       onSubmit={async (e) => {
         e.preventDefault();
-        await propose(proposalData.title, proposalData.description, proposalData.recipient, proposalData.amount);
+        await propose(proposalData.title, proposalData.description,  proposalData.amount);
         alert('Proposal has been submitted successfully.');
         // Reset form after submission
-        setProposalData({ title: '', description: '', recipient: '', amount: '' });
+        setProposalData({ title: '', description: '',  amount: '' });
       }}
     >
       <input
