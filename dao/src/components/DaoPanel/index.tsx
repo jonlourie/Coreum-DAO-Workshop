@@ -30,13 +30,20 @@ function DaoPanel(){
     amount: ''
   });
   
-  const contractAddress = 'Contract Address'; 
+  const contractAddress = 'testcore15rdlncz75zf2txgue52zcmm4jh6hxr5gejmavnxnr2rxh8a5jyjqgypktm'; 
+  //const rpcEndpoint = 'https://full-node.testnet-1.coreum.dev:26657';
 
   const chainContext = useChain(chainName);
+  const rpcEndpoint = 'https://full-node.mainnet-1.coreum.dev:26657';
+
+  
   const walletAddress = chainContext.address ?? "";
 
+  //const walletAddress = "testcore1288r0lprw9dqdqenfk2s7gamqt37nqmxxrt9w3";
+
+
   //pull this from the config file
-  const rpcEndpoint = 'wss://coreum-rpc.publicnode.com:443/websocket'; //is this the right rpc? https://coreum-rpc.publicnode.com/
+  //const rpcEndpoint = 'wss://coreum-rpc.publicnode.com:443/websocket'; //is this the right rpc? https://coreum-rpc.publicnode.com/
   //const rpcEndpoint = PUBLIC_RPC_ENDPOINT;
 
   const [cwClient, setCwClient] = useState(null);
@@ -75,6 +82,9 @@ useEffect(() => {
   const initCosmWasmClient = async () => {
     const client = await CosmWasmClient.connect(rpcEndpoint);
     setCwClient(client);
+    console.log('CosmWasm Client:', client);
+    console.log('Wallet Address:', walletAddress);
+    console.log('Contract Address:', contractAddress);
   };
 
   initCosmWasmClient();
@@ -134,7 +144,7 @@ const queryProposal = async (proposalId) => {
 
 //executables https://cosmos.github.io/cosmjs/latest/cosmwasm-stargate/classes/SigningCosmWasmClient.html
 const propose = async (title, description, amount) => {
-  if (!chainContext.client || !walletAddress) return;
+  //if (!chainContext.client || !walletAddress) return;
   try {
     const executeMsg = { 
       propose: { 
@@ -147,6 +157,10 @@ const propose = async (title, description, amount) => {
     //const fee = { amount: [{ denom: 'ucosm', amount: '5000' }], gas: '200000' };
     //const signer = await coreumSigner.getSigner();
     const signingClient = new SigningCosmWasmClient(rpcEndpoint, walletAddress, coreumSigner);
+
+    console.log('Execute Message:', executeMsg);
+    console.log('signing client', signingClient);
+
     const response = await signingClient.execute(walletAddress, contractAddress, executeMsg, fee);
     console.log('Execute Response:', response);
   } catch (error) {
@@ -241,7 +255,7 @@ const vote = async (proposalId, approve) => {
       ></textarea>
       <input
         name="date"
-        type="date"
+        type="number"
         placeholder="Date"
         value={proposalData.amount}
         onChange={(e) => setProposalData({ ...proposalData, amount: e.target.value })}
@@ -253,6 +267,27 @@ const vote = async (proposalId, approve) => {
         className="px-6 py-2 font-semibold text-white rounded-lg shadow-lg bg-gradient-to-r from-teal-300 to-cyan-500 hover:from-teal-400 hover:to-cyan-600 transition ease-in-out duration-300"
       >
         Submit Proposal
+      </button>
+      <button
+        type="button" // Make sure this is of type 'button' so it doesn't submit the form
+        onClick={queryAllProposals} // Trigger the function to query all proposals
+        className="px-6 py-2 font-semibold text-white rounded-lg shadow-lg bg-gradient-to-r from-blue-300 to-indigo-500 hover:from-blue-400 hover:to-indigo-600 transition ease-in-out duration-300"
+      >
+        Query All Proposals
+      </button>
+      <input
+        type="number"
+        placeholder="Proposal ID"
+        value={proposalId}
+        onChange={(e) => setProposalId(Number(e.target.value))}
+        className="w-full px-4 py-2 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      />
+      <button
+        type="button" // Again, of type 'button'
+        onClick={() => queryProposal(proposalId)} // Trigger the function to query a specific proposal by ID
+        className="px-6 py-2 font-semibold text-white rounded-lg shadow-lg bg-gradient-to-r from-purple-300 to-pink-500 hover:from-purple-400 hover:to-pink-600 transition ease-in-out duration-300"
+      >
+        Query Proposal by ID
       </button>
     </form>
   </div>
