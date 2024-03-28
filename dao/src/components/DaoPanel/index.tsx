@@ -5,8 +5,10 @@ import { Tab} from "@headlessui/react";
 import { chainName, PUBLIC_RPC_ENDPOINT} from "@/config/defaults";
 import { Box, GovernanceProposalItem } from '@interchain-ui/react';
 import { StdFee } from '@cosmjs/amino';
+import { Tendermint34Client } from "@cosmjs/tendermint-rpc";
+//import { OfflineSigner } from "@cosmjs/launchpad";
 
-import { CosmWasmClient, SigningCosmWasmClient } from '@cosmjs/cosmwasm-stargate';
+import { CosmWasmClient, SigningCosmWasmClient, SigningCosmWasmClientOptions} from '@cosmjs/cosmwasm-stargate';
 
 function classNames(...classes) {
   return classes.filter(Boolean).join(' ')
@@ -31,15 +33,15 @@ function DaoPanel(){
   });
   
   const contractAddress = 'testcore15rdlncz75zf2txgue52zcmm4jh6hxr5gejmavnxnr2rxh8a5jyjqgypktm'; 
-  //const rpcEndpoint = 'https://full-node.testnet-1.coreum.dev:26657';
+  const rpcEndpoint = 'https://full-node.testnet-1.coreum.dev:26657';
 
   const chainContext = useChain(chainName);
-  const rpcEndpoint = 'https://full-node.mainnet-1.coreum.dev:26657';
+  //const rpcEndpoint = 'https://full-node.mainnet-1.coreum.dev:26657';
 
   
-  const walletAddress = chainContext.address ?? "";
+  //const walletAddress = chainContext.address ?? "";
 
-  //const walletAddress = "testcore1288r0lprw9dqdqenfk2s7gamqt37nqmxxrt9w3";
+  const walletAddress = "testcore1fh333n8t6wjz7fl3zxgd08pqekj9ltku52unt0";
 
 
   //pull this from the config file
@@ -49,7 +51,7 @@ function DaoPanel(){
   const [cwClient, setCwClient] = useState(null);
 
   const fee: StdFee = {
-    amount: [{ denom: "ucore", amount: "6084" }],
+    amount: [{ denom: "utest", amount: "6084" }],
     gas: "120000",
   };
   
@@ -143,30 +145,60 @@ const queryProposal = async (proposalId) => {
 
 
 //executables https://cosmos.github.io/cosmjs/latest/cosmwasm-stargate/classes/SigningCosmWasmClient.html
-const propose = async (title, description, amount) => {
-  //if (!chainContext.client || !walletAddress) return;
+const propose = async (title, description) => {
+  // Hardcoded amount, represented as a string to match the Uint128 format expected by the contract
+  const amount = "123456789012345678901234567890"; // This is just a placeholder
+
+  if (!walletAddress) {
+    console.error('Wallet address is empty.');
+    return;
+  }
+
   try {
-    const executeMsg = { 
-      propose: { 
-        title, 
-        description, 
+    const executeMsg = {
+      propose: {
+        title,
+        description,
         walletAddress, 
-        amount //put in the date instead of amount
-      } 
+        amount, // Hardcoded amount set here
+      }
     };
-    //const fee = { amount: [{ denom: 'ucosm', amount: '5000' }], gas: '200000' };
-    //const signer = await coreumSigner.getSigner();
-    const signingClient = new SigningCosmWasmClient(rpcEndpoint, walletAddress, coreumSigner);
 
     console.log('Execute Message:', executeMsg);
-    console.log('signing client', signingClient);
+    
+    //const signer = await coreumSigner?.getAccount(walletAddress);
+    const signer = await chainContext.getOfflineSignerAmino();
+    if (!signer) {
+      console.error('Signer is empty.');
+      return;
+    }
 
+    const tmClient = await Tendermint34Client.connect(rpcEndpoint);
+    //const options: SigningCosmWasmClientOptions = {
+        // Set your options as needed
+
+        //gasPrice: "0.025utest",
+    //};
+
+  const signingClient = await SigningCosmWasmClient.connectWithSigner(
+      rpcEndpoint,
+      signer,    
+  );
+
+  if (!signingClient) {
+    console.error('Signing client is empty.');
+    return;}
+  
+
+    //const signingClient = new SigningCosmWasmClient(tmClient, signer, options);
     const response = await signingClient.execute(walletAddress, contractAddress, executeMsg, fee);
+
     console.log('Execute Response:', response);
   } catch (error) {
     console.error('Error executing contract:', error);
   }
 };
+
 
 const vote = async (proposalId, approve) => {
   if (!chainContext.client || !walletAddress) return;
@@ -230,7 +262,7 @@ const vote = async (proposalId, approve) => {
       autoComplete="off"
       onSubmit={async (e) => {
         e.preventDefault();
-        await propose(proposalData.title, proposalData.description,  proposalData.amount);
+        await propose(proposalData.title, proposalData.description);
         alert('Proposal has been submitted successfully.');
         // Reset form after submission
         setProposalData({ title: '', description: '',  amount: '' });
